@@ -4,7 +4,7 @@ let targetMap = new WeakMap();
 class ReactiveEffect {
   private _fn: any;
 
-  constructor(fn) {
+  constructor(fn, public scheduler?) {
     this._fn = fn;
   }
 
@@ -17,8 +17,8 @@ class ReactiveEffect {
   }
 }
 
-export function effect(fn) {
-  const _effect = new ReactiveEffect(fn);
+export function effect(fn, options: any = {}) {
+  const _effect = new ReactiveEffect(fn, options.scheduler);
   _effect.run();
 
   // bind "this" pointer to _effect
@@ -51,6 +51,10 @@ export function trigger(target, key) {
   const depMap = depsMap.get(key);
 
   depMap.forEach((effect) => {
-    effect.run();
+    if (effect.scheduler) {
+      effect.scheduler();
+    } else {
+      effect.run();
+    }
   });
 }
