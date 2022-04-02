@@ -1,7 +1,9 @@
 import { extend } from '../shared';
 
+// Global variables
 let activeEffect: any;
 let targetMap = new WeakMap();
+let shouldTrack;
 
 class ReactiveEffect {
   private _fn: any;
@@ -15,9 +17,17 @@ class ReactiveEffect {
   }
 
   run() {
+    if (!this.active) {
+      return this._fn();
+    }
+
+    shouldTrack = true;
     activeEffect = this;
+
     const res = this._fn();
-    activeEffect = null;
+
+    shouldTrack = false;
+    activeEffect = undefined;
 
     return res;
   }
@@ -33,16 +43,10 @@ class ReactiveEffect {
   }
 }
 
-export function cleanupEffect(effect) {
-  effect.deps.forEach((dep: any) => {
-    dep.delete(effect);
-  });
-}
-
 export function effect(fn, options: any = {}) {
   const _effect = new ReactiveEffect(fn);
   _effect.run();
-  // options
+  // Options
   extend(_effect, options);
 
   // bind "this" pointer to _effect
@@ -53,6 +57,8 @@ export function effect(fn, options: any = {}) {
 }
 
 export function track(target, key) {
+  if (!isTracking()) return;
+
   // Create a depdendencies map target -> key
   let depsMap = targetMap.get(target);
   if (!depsMap) {
@@ -67,7 +73,9 @@ export function track(target, key) {
     depsMap.set(key, dep);
   }
 
-  if (!activeEffect) return;
+  // No need to add existing dependency
+  if (dep.has(activeEffect)) return;
+
   // Add effect to the dependency map
   dep.add(activeEffect);
   activeEffect.deps.push(dep);
@@ -75,9 +83,9 @@ export function track(target, key) {
 
 export function trigger(target, key) {
   const depsMap = targetMap.get(target);
-  const depMap = depsMap.get(key);
+  const dep = depsMap.get(key);
 
-  depMap.forEach((effect) => {
+  dep.forEach((effect) => {
     if (effect.scheduler) {
       effect.scheduler();
     } else {
@@ -88,4 +96,16 @@ export function trigger(target, key) {
 
 export function stop(runner) {
   runner.effect.stop();
+}
+
+function cleanupEffect(effect) {
+  effect.deps.forEach((dep: any) => {
+    dep.delete(effect);
+  });
+  // Reset deps
+  effect.deps.length = 0;
+}
+
+function isTracking() {
+  return shouldTrack && activeEffect;
 }
