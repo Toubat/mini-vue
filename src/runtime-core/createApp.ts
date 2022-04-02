@@ -1,13 +1,14 @@
 import { render } from './renderer';
 import { createVNode } from './vnode';
 
-export function creatApp(rootComponent) {
+export function createApp(rootComponent) {
   return {
-    mount(rootContainer) {
+    mount(rootSelector) {
       // Convert to VNode
       // component -> VNode
       const vnode = createVNode(rootComponent);
 
+      const rootContainer = document.querySelector(rootSelector);
       render(vnode, rootContainer);
     },
   };

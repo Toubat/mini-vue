@@ -6,10 +6,14 @@ export function render(vnode, container) {
 }
 
 function patch(vnode, container) {
-  // check if vnode is of element type
+  // TODO: check if vnode is of element type
+  // process element
+  processElement(vnode, container);
   // process component
   processComponent(vnode, container);
 }
+
+function processElement(vnode, container) {}
 
 function processComponent(vnode, container) {
   mountComponent(vnode, container);
