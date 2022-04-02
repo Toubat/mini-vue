@@ -1,3 +1,4 @@
+import { isElement, isObject } from '../shared/index';
 import { createComponentInstance, setupComponent } from './component';
 
 export function render(vnode, container) {
@@ -6,17 +7,43 @@ export function render(vnode, container) {
 }
 
 function patch(vnode, container) {
-  // TODO: check if vnode is of element type
-  // process element
-  processElement(vnode, container);
-  // process component
-  processComponent(vnode, container);
+  debugger;
+  // Check if vnode is of element type
+  if (isElement(vnode)) {
+    // process element
+    processElement(vnode, container);
+  } else if (isObject(vnode)) {
+    // process component
+    processComponent(vnode, container);
+  }
 }
 
-function processElement(vnode, container) {}
+function processElement(vnode, container) {
+  mountElement(vnode, container);
+}
 
 function processComponent(vnode, container) {
   mountComponent(vnode, container);
+}
+
+function mountElement(vnode, container) {
+  const { type, props, children } = vnode;
+
+  const el = document.createElement(type);
+
+  // String/Array
+  if (typeof children === 'string') {
+    el.textContent = children;
+  } else if (Array.isArray(children)) {
+    moundChildren(vnode, el);
+  }
+
+  for (const key in props) {
+    const val = props[key];
+    el.setAttribute(key, val);
+  }
+
+  container.append(el);
 }
 
 function mountComponent(vnode, container) {
@@ -33,4 +60,10 @@ function setupRenderEffect(instance, container) {
   // vnode -> patch
   // vnode -> element -> mountElement
   patch(subTree, container);
+}
+
+function moundChildren(vnode, container) {
+  vnode.children.forEach((child) => {
+    patch(child, container);
+  });
 }
