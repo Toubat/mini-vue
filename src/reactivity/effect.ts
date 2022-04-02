@@ -5,15 +5,16 @@ let activeEffect: any;
 let targetMap = new WeakMap();
 let shouldTrack;
 
-class ReactiveEffect {
+export class ReactiveEffect {
   private _fn: any;
   deps = [];
   active = true;
   onStop?: () => void;
   scheduler?: () => void;
 
-  constructor(fn) {
+  constructor(fn, scheduler) {
     this._fn = fn;
+    this.scheduler = scheduler;
   }
 
   run() {
@@ -44,7 +45,7 @@ class ReactiveEffect {
 }
 
 export function effect(fn, options: any = {}) {
-  const _effect = new ReactiveEffect(fn);
+  const _effect = new ReactiveEffect(fn, options.scheduler);
   _effect.run();
   // Options
   extend(_effect, options);
@@ -73,6 +74,10 @@ export function track(target, key) {
     depsMap.set(key, dep);
   }
 
+  trackEffects(dep);
+}
+
+export function trackEffects(dep) {
   // No need to add existing dependency
   if (dep.has(activeEffect)) return;
 
@@ -85,6 +90,10 @@ export function trigger(target, key) {
   const depsMap = targetMap.get(target);
   const dep = depsMap.get(key);
 
+  triggerEffects(dep);
+}
+
+export function triggerEffects(dep) {
   dep.forEach((effect) => {
     if (effect.scheduler) {
       effect.scheduler();
@@ -98,14 +107,14 @@ export function stop(runner) {
   runner.effect.stop();
 }
 
+export function isTracking() {
+  return shouldTrack && activeEffect !== undefined;
+}
+
 function cleanupEffect(effect) {
   effect.deps.forEach((dep: any) => {
     dep.delete(effect);
   });
   // Reset deps
   effect.deps.length = 0;
-}
-
-function isTracking() {
-  return shouldTrack && activeEffect;
 }

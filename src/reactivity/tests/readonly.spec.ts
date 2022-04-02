@@ -1,4 +1,4 @@
-import { isReadonly, readonly } from '../reactive';
+import { isProxy, isReadonly, readonly } from '../reactive';
 
 describe('readonly', () => {
   it('should make nested values readonly', () => {
@@ -43,5 +43,12 @@ describe('readonly', () => {
     expect(isReadonly(observed.array)).toBe(true);
     expect(isReadonly(observed.array[0])).toBe(true);
     expect(isReadonly(original.nested.foo)).toBe(false);
+  });
+
+  it('should differentiate whether proxy is created from readonly', () => {
+    const original = { foo: 1 };
+    const observed = readonly(original);
+
+    expect(isProxy(observed)).toBe(true);
   });
 });
