@@ -1,3 +1,4 @@
+import { visitNode } from '../../node_modules/typescript/lib/typescript';
 import { isElement, isObject } from '../shared/index';
 import { createComponentInstance, setupComponent } from './component';
 
@@ -7,7 +8,6 @@ export function render(vnode, container) {
 }
 
 function patch(vnode, container) {
-  debugger;
   // Check if vnode is of element type
   if (isElement(vnode)) {
     // process element
@@ -29,7 +29,7 @@ function processComponent(vnode, container) {
 function mountElement(vnode, container) {
   const { type, props, children } = vnode;
 
-  const el = document.createElement(type);
+  const el = (vnode.el = document.createElement(type));
 
   // String/Array
   if (typeof children === 'string') {
@@ -46,20 +46,24 @@ function mountElement(vnode, container) {
   container.append(el);
 }
 
-function mountComponent(vnode, container) {
+function mountComponent(initialVNode, container) {
   // Create component instance
-  const instance = createComponentInstance(vnode);
+  const instance = createComponentInstance(initialVNode);
 
   setupComponent(instance);
   setupRenderEffect(instance, container);
 }
 
 function setupRenderEffect(instance, container) {
-  const subTree = instance.render();
+  const { proxy } = instance;
+  const subTree = instance.render.call(proxy);
 
   // vnode -> patch
   // vnode -> element -> mountElement
   patch(subTree, container);
+
+  // After element mounted
+  instance.vnode.el = subTree.el;
 }
 
 function moundChildren(vnode, container) {
