@@ -1,5 +1,6 @@
 import { visitNode } from '../../node_modules/typescript/lib/typescript';
 import { isElement, isObject } from '../shared/index';
+import { ShapeFlag } from '../shared/shapeFlags';
 import { createComponentInstance, setupComponent, Component } from './component';
 import { VNode } from './vnode';
 
@@ -9,11 +10,15 @@ export function render(vnode: VNode, container: HTMLElement) {
 }
 
 function patch(vnode: VNode, container: HTMLElement) {
+  // ShapeFlags
+  const { shapeFlag } = vnode;
+
   // Check if vnode is of element type
-  if (isElement(vnode)) {
+  if (shapeFlag & ShapeFlag.ELEMENT) {
     // process element
     processElement(vnode, container);
-  } else if (isObject(vnode)) {
+  } else if (shapeFlag & ShapeFlag.STATEFUL_COMPONENT) {
+    // STATEFUL_COMPONENT
     // process component
     processComponent(vnode, container);
   }
@@ -28,15 +33,17 @@ function processComponent(vnode: VNode, container: HTMLElement) {
 }
 
 function mountElement(vnode: VNode, container: HTMLElement) {
-  const { type, props, children } = vnode;
+  const { type, props, children, shapeFlag } = vnode;
 
   // @ts-ignore
   const el: HTMLElement = (vnode.el = document.createElement(type));
 
   // String/Array
-  if (typeof children === 'string') {
+  if (shapeFlag & ShapeFlag.TEXT_CHILDREN) {
+    // @ts-ignore
     el.textContent = children;
-  } else if (Array.isArray(children)) {
+  } else if (shapeFlag & ShapeFlag.ARRAY_CHILDREN) {
+    // @ts-ignore
     moundChildren(children, el);
   }
 
