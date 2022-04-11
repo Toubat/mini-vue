@@ -5,8 +5,8 @@ import { reactive } from './reactive';
 class RefImpl {
   private _value: any;
   private _rawValue: any;
-  public dep;
-  public __v_isRef = true;
+  public dep: any;
+  public __v_isRef: boolean = true;
 
   constructor(value) {
     this._rawValue = value;
@@ -59,7 +59,7 @@ export function proxyRefs(objectWithRefs) {
   });
 }
 
-function trackRefValue(ref) {
+function trackRefValue(ref: RefImpl) {
   if (isTracking()) {
     trackEffects(ref.dep);
   }

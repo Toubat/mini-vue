@@ -1,13 +1,14 @@
 import { visitNode } from '../../node_modules/typescript/lib/typescript';
 import { isElement, isObject } from '../shared/index';
-import { createComponentInstance, setupComponent } from './component';
+import { createComponentInstance, setupComponent, Component } from './component';
+import { VNode } from './vnode';
 
-export function render(vnode, container) {
+export function render(vnode: VNode, container: HTMLElement) {
   // patch
   patch(vnode, container);
 }
 
-function patch(vnode, container) {
+function patch(vnode: VNode, container: HTMLElement) {
   // Check if vnode is of element type
   if (isElement(vnode)) {
     // process element
@@ -18,24 +19,25 @@ function patch(vnode, container) {
   }
 }
 
-function processElement(vnode, container) {
+function processElement(vnode: VNode, container: HTMLElement) {
   mountElement(vnode, container);
 }
 
-function processComponent(vnode, container) {
+function processComponent(vnode: VNode, container: HTMLElement) {
   mountComponent(vnode, container);
 }
 
-function mountElement(vnode, container) {
+function mountElement(vnode: VNode, container: HTMLElement) {
   const { type, props, children } = vnode;
 
-  const el = (vnode.el = document.createElement(type));
+  // @ts-ignore
+  const el: HTMLElement = (vnode.el = document.createElement(type));
 
   // String/Array
   if (typeof children === 'string') {
     el.textContent = children;
   } else if (Array.isArray(children)) {
-    moundChildren(vnode, el);
+    moundChildren(children, el);
   }
 
   for (const key in props) {
@@ -46,7 +48,7 @@ function mountElement(vnode, container) {
   container.append(el);
 }
 
-function mountComponent(initialVNode, container) {
+function mountComponent(initialVNode: VNode, container: HTMLElement) {
   // Create component instance
   const instance = createComponentInstance(initialVNode);
 
@@ -66,8 +68,8 @@ function setupRenderEffect(instance, container) {
   instance.vnode.el = subTree.el;
 }
 
-function moundChildren(vnode, container) {
-  vnode.children.forEach((child) => {
+function moundChildren(children: VNode[], container: HTMLElement) {
+  children.forEach((child) => {
     patch(child, container);
   });
 }

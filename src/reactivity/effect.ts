@@ -1,14 +1,14 @@
 import { extend } from '../shared';
 
 // Global variables
-let activeEffect: any;
+let activeEffect: ReactiveEffect | undefined;
 let targetMap = new WeakMap();
 let shouldTrack;
 
 export class ReactiveEffect {
   private _fn: any;
-  deps = [];
-  active = true;
+  deps: any = [];
+  active: boolean = true;
   onStop?: () => void;
   scheduler?: () => void;
 
@@ -83,7 +83,11 @@ export function trackEffects(dep) {
 
   // Add effect to the dependency map
   dep.add(activeEffect);
-  activeEffect.deps.push(dep);
+
+  // Effect reverse mapping
+  if (activeEffect) {
+    activeEffect.deps.push(dep);
+  }
 }
 
 export function trigger(target, key) {

@@ -2,7 +2,7 @@ import { ReactiveEffect } from './effect';
 
 class ComputedImpl {
   private _getter: () => any;
-  private _dirty = true;
+  private _dirty = true; // indicate whether dependency has changed
   private _value: any;
   private _effect: ReactiveEffect;
 
