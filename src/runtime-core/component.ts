@@ -1,10 +1,13 @@
 import { shallowRaedonly } from '../reactivity/reactive';
+import { emit } from './componentEmit';
 import { initProps } from './componentProps';
 import { PublicInstanceProxyHandlers } from './componentPublicInstance';
 import { VNode } from './vnode';
 
+export type Emit = (event: string, ...args: any[]) => void;
+
 export interface Component {
-  setup?: (props: any) => any;
+  setup?: (props: any, { emit }: { emit: Emit }) => any;
   render?: () => VNode;
 }
 
@@ -13,6 +16,7 @@ export interface ComponentInstance {
   vnode: VNode;
   setupState: any;
   props: any;
+  emit: Emit;
   el: HTMLElement | null;
   proxy: any;
   render?: () => VNode;
@@ -24,9 +28,12 @@ export function createComponentInstance(vnode): ComponentInstance {
     vnode,
     setupState: {},
     props: {},
+    emit: () => {},
     el: null,
     proxy: null,
   };
+
+  instance.emit = emit.bind(null, instance);
   return instance;
 }
 
@@ -47,7 +54,9 @@ function setupStatefulComponent(instance: ComponentInstance) {
 
   if (setup) {
     // Return function or object
-    const setupResult = setup(shallowRaedonly(instance.props));
+    const setupResult = setup(shallowRaedonly(instance.props), {
+      emit: instance.emit,
+    });
 
     handleSetupResult(instance, setupResult);
   }
