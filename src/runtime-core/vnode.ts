@@ -3,13 +3,17 @@ import { Component } from './component';
 
 export interface VNode {
   type: Component | string;
-  props?: any;
+  props: any;
   children?: VNode[] | string;
   shapeFlag: ShapeFlag;
   el: HTMLElement | null;
 }
 
-export function createVNode(type: Component | string, props?, children?): VNode {
+export function createVNode(
+  type: Component | string,
+  props: any = {},
+  children?: VNode[] | string
+): VNode {
   const vnode: VNode = {
     type,
     props,

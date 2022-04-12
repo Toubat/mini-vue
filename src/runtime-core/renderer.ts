@@ -1,7 +1,7 @@
 import { visitNode } from '../../node_modules/typescript/lib/typescript';
 import { isElement, isObject } from '../shared/index';
 import { ShapeFlag } from '../shared/shapeFlags';
-import { createComponentInstance, setupComponent, Component } from './component';
+import { createComponentInstance, setupComponent, Component, ComponentInstance } from './component';
 import { VNode } from './vnode';
 
 export function render(vnode: VNode, container: HTMLElement) {
@@ -71,8 +71,10 @@ function mountComponent(initialVNode: VNode, container: HTMLElement) {
   setupRenderEffect(instance, container);
 }
 
-function setupRenderEffect(instance, container) {
+function setupRenderEffect(instance: ComponentInstance, container) {
   const { proxy } = instance;
+
+  if (!instance.render) return;
   const subTree = instance.render.call(proxy);
 
   // vnode -> patch

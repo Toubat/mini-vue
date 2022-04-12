@@ -3,6 +3,7 @@ import { Foo } from './Foo.js';
 
 window.self = null;
 export const App = {
+  name: 'App',
   setup() {
     return {
       msg: 'mini-vue',

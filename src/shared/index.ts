@@ -13,3 +13,5 @@ export const isElement = (vnode: VNode) => {
 export const hasChanged = (value, newValue) => {
   return !Object.is(value, newValue);
 };
+
+export const hasOwn = (target, key) => Object.prototype.hasOwnProperty.call(target, key);
