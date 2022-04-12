@@ -4,7 +4,7 @@ import { Component } from './component';
 export interface VNode {
   type: Component | string;
   props: any;
-  children?: VNode[] | string;
+  children?: VNode[] | string | VNode;
   shapeFlag: ShapeFlag;
   el: HTMLElement | null;
 }
@@ -12,7 +12,7 @@ export interface VNode {
 export function createVNode(
   type: Component | string,
   props: any = {},
-  children?: VNode[] | string
+  children?: VNode[] | string | VNode
 ): VNode {
   const vnode: VNode = {
     type,
@@ -26,6 +26,8 @@ export function createVNode(
     vnode.shapeFlag = vnode.shapeFlag | ShapeFlag.TEXT_CHILDREN;
   } else if (Array.isArray(children)) {
     vnode.shapeFlag = vnode.shapeFlag | ShapeFlag.ARRAY_CHILDREN;
+  } else if (vnode.shapeFlag & ShapeFlag.STATEFUL_COMPONENT && typeof children === 'object') {
+    vnode.shapeFlag = vnode.shapeFlag | ShapeFlag.SLOT_CHILDREN;
   }
 
   return vnode;

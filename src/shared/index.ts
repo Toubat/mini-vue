@@ -29,3 +29,7 @@ export const camelize = (str: string): string => {
     return c ? c.toUpperCase() : '';
   });
 };
+
+export const normalizeSlotValue = (value) => {
+  return Array.isArray(value) ? value : [value];
+};

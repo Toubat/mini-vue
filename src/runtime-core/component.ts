@@ -2,6 +2,7 @@ import { shallowRaedonly } from '../reactivity/reactive';
 import { emit } from './componentEmit';
 import { initProps } from './componentProps';
 import { PublicInstanceProxyHandlers } from './componentPublicInstance';
+import { initSlots } from './componentSlots';
 import { VNode } from './vnode';
 
 export type Emit = (event: string, ...args: any[]) => void;
@@ -17,6 +18,7 @@ export interface ComponentInstance {
   setupState: any;
   props: any;
   emit: Emit;
+  slots: any;
   el: HTMLElement | null;
   proxy: any;
   render?: () => VNode;
@@ -29,6 +31,7 @@ export function createComponentInstance(vnode): ComponentInstance {
     setupState: {},
     props: {},
     emit: () => {},
+    slots: {},
     el: null,
     proxy: null,
   };
@@ -41,6 +44,7 @@ export function setupComponent(instance: ComponentInstance) {
   // TODO: initProps()
   initProps(instance, instance.vnode.props);
   // TODO: initSlots()
+  initSlots(instance, instance.vnode.children);
 
   setupStatefulComponent(instance);
 }

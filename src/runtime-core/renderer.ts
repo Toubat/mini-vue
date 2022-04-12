@@ -87,6 +87,10 @@ function setupRenderEffect(instance: ComponentInstance, container) {
 
 function moundChildren(children: VNode[], container: HTMLElement) {
   children.forEach((child) => {
+    if (child === undefined) {
+      debugger;
+      console.log(children);
+    }
     patch(child, container);
   });
 }

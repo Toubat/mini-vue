@@ -1,7 +1,9 @@
 import { hasOwn } from '../shared/index';
+import { ComponentInstance } from './component';
 
 const publicPropertiesMap = {
-  $el: (i) => i.vnode.el,
+  $el: (i: ComponentInstance) => i.vnode.el,
+  $slots: (i: ComponentInstance) => i.slots,
 };
 
 export const PublicInstanceProxyHandlers = {
