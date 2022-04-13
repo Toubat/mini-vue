@@ -1,5 +1,3 @@
-import { visitNode } from '../../node_modules/typescript/lib/typescript';
-import { isElement, isObject } from '../shared/index';
 import { ShapeFlag } from '../shared/shapeFlags';
 import { createComponentInstance, setupComponent, Component, ComponentInstance } from './component';
 import { createTextVNode, Fragment, Text, VNode } from './vnode';

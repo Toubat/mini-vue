@@ -1,4 +1,4 @@
-import { h, provide, inject } from '../../lib/mini-vue.esm.js';
+import { h, provide, inject, ref } from '../../lib/mini-vue.esm.js';
 import { Foo } from './Foo.js';
 
 export const Provider = {
@@ -8,7 +8,7 @@ export const Provider = {
     provide('bar', 'barVal');
   },
   render() {
-    return h('div', {}, [h('div', {}, [h('p', {}, 'Provider'), h(Middle)])]);
+    return h('div', {}, [h('div', {}, [h('p', {}, `Provider`), h(Middle)])]);
   },
 };
 
