@@ -1,4 +1,4 @@
-import { h } from '../../lib/mini-vue.esm.js';
+import { h, createTextVNode } from '../../lib/mini-vue.esm.js';
 import { Foo } from './Foo.js';
 
 window.self = null;
@@ -17,11 +17,19 @@ export const App = {
       Foo,
       {},
       {
-        header: ({ age }) => h('p', {}, 'header ' + age),
+        header: ({ age }) => [h('p', {}, 'header ' + age), 'Hello World'],
         footer: () => h('p', {}, 'footer'),
       }
     );
 
-    return h('div', {}, [bar]);
+    return h(
+      'div',
+      {
+        onClick() {
+          console.log('click');
+        },
+      },
+      ['ADADADASD', bar]
+    );
   },
 };

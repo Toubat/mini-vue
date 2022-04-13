@@ -1,18 +1,21 @@
 import { ShapeFlag } from '../shared/shapeFlags';
 import { Component } from './component';
 
+export const Fragment = Symbol('Fragment');
+export const Text = Symbol('Text');
+
 export interface VNode {
-  type: Component | string;
+  type: Component | string | typeof Fragment | typeof Text;
   props: any;
-  children?: VNode[] | string | VNode;
+  children?: VNode[] | string;
   shapeFlag: ShapeFlag;
-  el: HTMLElement | null;
+  el: HTMLElement | Text | null;
 }
 
 export function createVNode(
-  type: Component | string,
+  type: Component | string | typeof Fragment | typeof Text,
   props: any = {},
-  children?: VNode[] | string | VNode
+  children?: VNode[] | string
 ): VNode {
   const vnode: VNode = {
     type,
@@ -31,6 +34,10 @@ export function createVNode(
   }
 
   return vnode;
+}
+
+export function createTextVNode(text: string): VNode {
+  return createVNode(Text, {}, text);
 }
 
 export function getShapeFlag(type) {

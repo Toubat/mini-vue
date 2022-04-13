@@ -2,7 +2,7 @@ import { visitNode } from '../../node_modules/typescript/lib/typescript';
 import { isElement, isObject } from '../shared/index';
 import { ShapeFlag } from '../shared/shapeFlags';
 import { createComponentInstance, setupComponent, Component, ComponentInstance } from './component';
-import { VNode } from './vnode';
+import { createTextVNode, Fragment, Text, VNode } from './vnode';
 
 export function render(vnode: VNode, container: HTMLElement) {
   // patch
@@ -11,17 +11,38 @@ export function render(vnode: VNode, container: HTMLElement) {
 
 function patch(vnode: VNode, container: HTMLElement) {
   // ShapeFlags
-  const { shapeFlag } = vnode;
+  const { shapeFlag, type } = vnode;
 
-  // Check if vnode is of element type
-  if (shapeFlag & ShapeFlag.ELEMENT) {
-    // process element
-    processElement(vnode, container);
-  } else if (shapeFlag & ShapeFlag.STATEFUL_COMPONENT) {
-    // STATEFUL_COMPONENT
-    // process component
-    processComponent(vnode, container);
+  // Fragment -> only render children
+  switch (type) {
+    case Fragment:
+      processFragment(vnode, container);
+      break;
+    case Text:
+      processText(vnode, container);
+    default:
+      // Check if vnode is of element type or component type
+      if (shapeFlag & ShapeFlag.ELEMENT) {
+        // process element
+        processElement(vnode, container);
+      } else if (shapeFlag & ShapeFlag.STATEFUL_COMPONENT) {
+        // process component
+        processComponent(vnode, container);
+      }
   }
+}
+
+function processFragment(vnode: VNode, container: HTMLElement) {
+  const { children } = vnode;
+
+  mountChildren(children as VNode[], container);
+}
+
+function processText(vnode: VNode, container: HTMLElement) {
+  const { children } = vnode;
+
+  const textNode = (vnode.el = document.createTextNode(children as string));
+  container.append(textNode);
 }
 
 function processElement(vnode: VNode, container: HTMLElement) {
@@ -40,11 +61,9 @@ function mountElement(vnode: VNode, container: HTMLElement) {
 
   // String/Array
   if (shapeFlag & ShapeFlag.TEXT_CHILDREN) {
-    // @ts-ignore
-    el.textContent = children;
+    el.textContent = children as string;
   } else if (shapeFlag & ShapeFlag.ARRAY_CHILDREN) {
-    // @ts-ignore
-    moundChildren(children, el);
+    mountChildren(children as VNode[], el);
   }
 
   for (const key in props) {
@@ -85,8 +104,12 @@ function setupRenderEffect(instance: ComponentInstance, container) {
   instance.vnode.el = subTree.el;
 }
 
-function moundChildren(children: VNode[], container: HTMLElement) {
+function mountChildren(children: VNode[], container: HTMLElement) {
   children.forEach((child) => {
-    patch(child, container);
+    if (typeof child === 'string') {
+      patch(createTextVNode(child), container);
+    } else {
+      patch(child, container);
+    }
   });
 }
