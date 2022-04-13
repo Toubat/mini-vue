@@ -6,17 +6,17 @@ import { createTextVNode, Fragment, Text, VNode } from './vnode';
 
 export function render(vnode: VNode, container: HTMLElement) {
   // patch
-  patch(vnode, container);
+  patch(vnode, container, null);
 }
 
-function patch(vnode: VNode, container: HTMLElement) {
+function patch(vnode: VNode, container: HTMLElement, parentInstance: ComponentInstance | null) {
   // ShapeFlags
   const { shapeFlag, type } = vnode;
 
   // Fragment -> only render children
   switch (type) {
     case Fragment:
-      processFragment(vnode, container);
+      processFragment(vnode, container, parentInstance);
       break;
     case Text:
       processText(vnode, container);
@@ -24,18 +24,22 @@ function patch(vnode: VNode, container: HTMLElement) {
       // Check if vnode is of element type or component type
       if (shapeFlag & ShapeFlag.ELEMENT) {
         // process element
-        processElement(vnode, container);
+        processElement(vnode, container, parentInstance);
       } else if (shapeFlag & ShapeFlag.STATEFUL_COMPONENT) {
         // process component
-        processComponent(vnode, container);
+        processComponent(vnode, container, parentInstance);
       }
   }
 }
 
-function processFragment(vnode: VNode, container: HTMLElement) {
+function processFragment(
+  vnode: VNode,
+  container: HTMLElement,
+  parentInstance: ComponentInstance | null
+) {
   const { children } = vnode;
 
-  mountChildren(children as VNode[], container);
+  mountChildren(children as VNode[], container, parentInstance);
 }
 
 function processText(vnode: VNode, container: HTMLElement) {
@@ -45,15 +49,27 @@ function processText(vnode: VNode, container: HTMLElement) {
   container.append(textNode);
 }
 
-function processElement(vnode: VNode, container: HTMLElement) {
-  mountElement(vnode, container);
+function processElement(
+  vnode: VNode,
+  container: HTMLElement,
+  parentInstance: ComponentInstance | null
+) {
+  mountElement(vnode, container, parentInstance);
 }
 
-function processComponent(vnode: VNode, container: HTMLElement) {
-  mountComponent(vnode, container);
+function processComponent(
+  vnode: VNode,
+  container: HTMLElement,
+  parentInstance: ComponentInstance | null
+) {
+  mountComponent(vnode, container, parentInstance);
 }
 
-function mountElement(vnode: VNode, container: HTMLElement) {
+function mountElement(
+  vnode: VNode,
+  container: HTMLElement,
+  parentInstance: ComponentInstance | null
+) {
   const { type, props, children, shapeFlag } = vnode;
 
   // @ts-ignore
@@ -63,7 +79,7 @@ function mountElement(vnode: VNode, container: HTMLElement) {
   if (shapeFlag & ShapeFlag.TEXT_CHILDREN) {
     el.textContent = children as string;
   } else if (shapeFlag & ShapeFlag.ARRAY_CHILDREN) {
-    mountChildren(children as VNode[], el);
+    mountChildren(children as VNode[], el, parentInstance);
   }
 
   for (const key in props) {
@@ -82,9 +98,13 @@ function mountElement(vnode: VNode, container: HTMLElement) {
   container.append(el);
 }
 
-function mountComponent(initialVNode: VNode, container: HTMLElement) {
+function mountComponent(
+  initialVNode: VNode,
+  container: HTMLElement,
+  parentInstance: ComponentInstance | null
+) {
   // Create component instance
-  const instance = createComponentInstance(initialVNode);
+  const instance = createComponentInstance(initialVNode, parentInstance);
 
   setupComponent(instance);
   setupRenderEffect(instance, container);
@@ -98,18 +118,22 @@ function setupRenderEffect(instance: ComponentInstance, container) {
 
   // vnode -> patch
   // vnode -> element -> mountElement
-  patch(subTree, container);
+  patch(subTree, container, instance);
 
   // After element mounted
   instance.vnode.el = subTree.el;
 }
 
-function mountChildren(children: VNode[], container: HTMLElement) {
+function mountChildren(
+  children: VNode[],
+  container: HTMLElement,
+  parentInstance: ComponentInstance | null
+) {
   children.forEach((child) => {
     if (typeof child === 'string') {
-      patch(createTextVNode(child), container);
+      patch(createTextVNode(child), container, parentInstance);
     } else {
-      patch(child, container);
+      patch(child, container, parentInstance);
     }
   });
 }

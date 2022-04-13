@@ -10,6 +10,18 @@ export const App = {
   },
 
   render() {
-    return h('div', {}, [h('p', {}, [h('p', {}, 'currentInstance demo'), h(Foo)])]);
+    return h('div', {}, [
+      h('p', {}, [
+        h('p', {}, 'currentInstance demo'),
+        h(
+          Foo,
+          {},
+          {
+            header: () => h('h1', {}, 'Header'),
+            footer: () => h('h2', {}, 'Footer'),
+          }
+        ),
+      ]),
+    ]);
   },
 };

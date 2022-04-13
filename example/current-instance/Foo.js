@@ -1,4 +1,4 @@
-import { h, getCurrentInstance } from '../../lib/mini-vue.esm.js';
+import { h, getCurrentInstance, renderSlots } from '../../lib/mini-vue.esm.js';
 
 export const Foo = {
   name: 'Foo',
@@ -9,6 +9,10 @@ export const Foo = {
   },
 
   render() {
-    return h('div', {}, 'foo');
+    return h('div', {}, [
+      renderSlots(this.$slots, 'header'),
+      'Text Node',
+      renderSlots(this.$slots, 'footer'),
+    ]);
   },
 };

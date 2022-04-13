@@ -17,25 +17,33 @@ export interface ComponentInstance {
   vnode: VNode;
   setupState: any;
   props: any;
-  emit: Emit;
   slots: any;
+  provides: any;
   el: HTMLElement | null;
   proxy: any;
+  parent: ComponentInstance | null;
+  emit: Emit;
   render?: () => VNode;
 }
 
 let currentInstance: ComponentInstance | null = null;
 
-export function createComponentInstance(vnode): ComponentInstance {
+export function createComponentInstance(
+  vnode: VNode,
+  parent: ComponentInstance | null
+): ComponentInstance {
+  console.log('parent: ', parent);
   const instance: ComponentInstance = {
     type: vnode.type,
     vnode,
     setupState: {},
     props: {},
-    emit: () => {},
     slots: {},
+    provides: parent ? parent.provides : {},
     el: null,
     proxy: null,
+    parent: parent,
+    emit: () => {},
   };
 
   instance.emit = emit.bind(null, instance);
