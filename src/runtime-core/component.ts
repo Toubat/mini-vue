@@ -24,6 +24,8 @@ export interface ComponentInstance {
   render?: () => VNode;
 }
 
+let currentInstance: ComponentInstance | null = null;
+
 export function createComponentInstance(vnode): ComponentInstance {
   const instance: ComponentInstance = {
     type: vnode.type,
@@ -41,9 +43,9 @@ export function createComponentInstance(vnode): ComponentInstance {
 }
 
 export function setupComponent(instance: ComponentInstance) {
-  // TODO: initProps()
+  // initProps
   initProps(instance, instance.vnode.props);
-  // TODO: initSlots()
+  // initSlots
   initSlots(instance, instance.vnode.children);
 
   setupStatefulComponent(instance);
@@ -57,11 +59,13 @@ function setupStatefulComponent(instance: ComponentInstance) {
   const { setup } = Component;
 
   if (setup) {
+    // set global currentInstance variable to be used in setup()
+    setCurrentInstance(instance);
     // Return function or object
     const setupResult = setup(shallowRaedonly(instance.props), {
       emit: instance.emit,
     });
-
+    setCurrentInstance(null);
     handleSetupResult(instance, setupResult);
   }
 }
@@ -82,4 +86,12 @@ function finishComponentSetup(instance: ComponentInstance) {
   if (!instance.render) {
     instance.render = Component.render;
   }
+}
+
+export function getCurrentInstance() {
+  return currentInstance;
+}
+
+export function setCurrentInstance(instance: ComponentInstance | null) {
+  currentInstance = instance;
 }

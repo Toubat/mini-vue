@@ -1,4 +1,3 @@
-import { normalizeSlotValue } from '../shared/index';
 import { ShapeFlag } from '../shared/shapeFlags';
 import { ComponentInstance } from './component';
 
@@ -17,4 +16,8 @@ function normalizeObjectSlots(children: any, slots: any) {
     // slot
     slots[key] = (props) => normalizeSlotValue(value(props));
   }
+}
+
+function normalizeSlotValue(value) {
+  return Array.isArray(value) ? value : [value];
 }
