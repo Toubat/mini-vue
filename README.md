@@ -9,7 +9,7 @@
 - [x] computed 
 - [x] reactive effect
   - [x] custom scheduler
-  - [ ] on stop
+  - [x] on stop
 
 ## Runtime Core
 - [x] virtual node and `h` API
