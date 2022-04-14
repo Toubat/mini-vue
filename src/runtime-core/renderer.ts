@@ -1,4 +1,5 @@
 import { effect } from '../reactivity/effect';
+import { EMPTY_OBJ } from '../shared';
 import { ShapeFlag } from '../shared/shapeFlags';
 import { createComponentInstance, setupComponent, Component, ComponentInstance } from './component';
 import { createAppAPI } from './createApp';
@@ -6,7 +7,7 @@ import { createTextVNode, Fragment, Text, VNode } from './vnode';
 
 export interface RendererOptions {
   createElement: (type: string) => any;
-  patchProps: (el: HTMLElement, key: string, val: any) => void;
+  patchProps: (el: HTMLElement, key: string, prevVal: any, nextVal: any) => void;
   insert: (el: HTMLElement, container: HTMLElement) => void;
 }
 
@@ -82,13 +83,38 @@ export function createRenderer(options: RendererOptions) {
   }
 
   function patchElement(prevNode: VNode, currNode: VNode, container: HTMLElement) {
-    console.log('patchElement');
-    console.log('n1', prevNode);
-    console.log('n2', currNode);
-
     // TODO: patch props
+    const oldProps = prevNode.props || EMPTY_OBJ;
+    const newProps = currNode.props || EMPTY_OBJ;
 
+    const el = (currNode.el = prevNode.el);
+
+    patchProps(el as HTMLElement, oldProps, newProps);
     // TODO: patch children
+  }
+
+  function patchProps(el: HTMLElement, oldProps, newProps) {
+    // Optimization ??
+    if (oldProps === newProps) return;
+
+    // Add or modify existing prop
+    for (const key in newProps) {
+      const prevProp = oldProps[key];
+      const nextProp = newProps[key];
+
+      if (prevProp !== nextProp) {
+        hostPatchProps(el, key, prevProp, nextProp);
+      }
+    }
+
+    if (oldProps === EMPTY_OBJ) return;
+
+    // Remove old prop
+    for (const key in oldProps) {
+      if (!(key in newProps)) {
+        hostPatchProps(el, key, oldProps[key], null);
+      }
+    }
   }
 
   function processComponent(
@@ -120,8 +146,7 @@ export function createRenderer(options: RendererOptions) {
 
     for (const key in props) {
       const val = props[key];
-
-      hostPatchProps(el, key, val);
+      hostPatchProps(el, key, null, val);
     }
 
     // container.append(el);
@@ -162,7 +187,7 @@ export function createRenderer(options: RendererOptions) {
         const subTree = (instance.subTree = instance.render.call(proxy));
 
         patch(prevSubTree, subTree, container, instance);
-        instance.vnode.el = subTree.el;
+        // instance.vnode.el = subTree.el;
       }
     });
   }

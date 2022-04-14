@@ -1,5 +1,7 @@
 import { VNode } from '../runtime-core/vnode';
 
+export const EMPTY_OBJ = {};
+
 export const extend = Object.assign;
 
 export const isObject = (val) => {
