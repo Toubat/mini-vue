@@ -16,7 +16,6 @@ export const App = {
       'div',
       {
         id: 'root',
-        class: ['red', 'hard'],
       },
       [
         h('div', {}, 'hi, ' + this.msg),

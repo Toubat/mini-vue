@@ -21,7 +21,7 @@ export const Foo = {
       },
       'Emit Add'
     );
-    const foo = h('p', {}, 'foo');
+    const foo = h('p', { class: ['red'] }, 'foo');
     return h('div', {}, [foo, btn]);
   },
 };
