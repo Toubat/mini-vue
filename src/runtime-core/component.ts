@@ -1,3 +1,4 @@
+import { proxyRefs } from '../reactivity';
 import { shallowRaedonly } from '../reactivity/reactive';
 import { emit } from './componentEmit';
 import { initProps } from './componentProps';
@@ -22,6 +23,8 @@ export interface ComponentInstance {
   el: HTMLElement | null;
   proxy: any;
   parent: ComponentInstance | null;
+  isMounted: boolean;
+  subTree: VNode | null;
   emit: Emit;
   render?: () => VNode;
 }
@@ -43,6 +46,8 @@ export function createComponentInstance(
     el: null,
     proxy: null,
     parent: parent,
+    isMounted: false,
+    subTree: null,
     emit: () => {},
   };
 
@@ -82,7 +87,7 @@ function handleSetupResult(instance: ComponentInstance, setupResult: any) {
   // TODO: function
 
   if (typeof setupResult === 'object') {
-    instance.setupState = setupResult;
+    instance.setupState = proxyRefs(setupResult);
   }
 
   finishComponentSetup(instance);

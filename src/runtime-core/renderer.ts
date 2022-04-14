@@ -1,3 +1,4 @@
+import { effect } from '../reactivity/effect';
 import { ShapeFlag } from '../shared/shapeFlags';
 import { createComponentInstance, setupComponent, Component, ComponentInstance } from './component';
 import { createAppAPI } from './createApp';
@@ -18,63 +19,85 @@ export function createRenderer(options: RendererOptions) {
 
   function render(vnode: VNode, container: HTMLElement) {
     // patch
-    patch(vnode, container, null);
+    patch(null, vnode, container, null);
   }
 
-  function patch(vnode: VNode, container: HTMLElement, parentInstance: ComponentInstance | null) {
+  function patch(
+    prevNode: VNode | null,
+    currNode: VNode,
+    container: HTMLElement,
+    parentInstance: ComponentInstance | null
+  ) {
     // ShapeFlags
-    const { shapeFlag, type } = vnode;
+    const { shapeFlag, type } = currNode;
 
     // Fragment -> only render children
     switch (type) {
       case Fragment:
-        processFragment(vnode, container, parentInstance);
+        processFragment(prevNode, currNode, container, parentInstance);
         break;
       case Text:
-        processText(vnode, container);
+        processText(prevNode, currNode, container);
       default:
         // Check if vnode is of element type or component type
         if (shapeFlag & ShapeFlag.ELEMENT) {
           // process element
-          processElement(vnode, container, parentInstance);
+          processElement(prevNode, currNode, container, parentInstance);
         } else if (shapeFlag & ShapeFlag.STATEFUL_COMPONENT) {
           // process component
-          processComponent(vnode, container, parentInstance);
+          processComponent(prevNode, currNode, container, parentInstance);
         }
     }
   }
 
   function processFragment(
-    vnode: VNode,
+    prevNode: VNode | null,
+    currNode: VNode,
     container: HTMLElement,
     parentInstance: ComponentInstance | null
   ) {
-    const { children } = vnode;
+    const { children } = currNode;
 
     mountChildren(children as VNode[], container, parentInstance);
   }
 
-  function processText(vnode: VNode, container: HTMLElement) {
-    const { children } = vnode;
+  function processText(prevNode: VNode | null, currNode: VNode, container: HTMLElement) {
+    const { children } = currNode;
 
-    const textNode = (vnode.el = document.createTextNode(children as string));
+    const textNode = (currNode.el = document.createTextNode(children as string));
     container.append(textNode);
   }
 
   function processElement(
-    vnode: VNode,
+    prevNode: VNode | null,
+    currNode: VNode,
     container: HTMLElement,
     parentInstance: ComponentInstance | null
   ) {
-    mountElement(vnode, container, parentInstance);
+    if (!prevNode) {
+      mountElement(currNode, container, parentInstance);
+    } else {
+      patchElement(prevNode, currNode, container);
+    }
+  }
+
+  function patchElement(prevNode: VNode, currNode: VNode, container: HTMLElement) {
+    console.log('patchElement');
+    console.log('n1', prevNode);
+    console.log('n2', currNode);
+
+    // TODO: patch props
+
+    // TODO: patch children
   }
 
   function processComponent(
-    vnode: VNode,
+    prevNode: VNode | null,
+    currNode: VNode,
     container: HTMLElement,
     parentInstance: ComponentInstance | null
   ) {
-    mountComponent(vnode, container, parentInstance);
+    mountComponent(currNode, container, parentInstance);
   }
 
   function mountElement(
@@ -118,17 +141,30 @@ export function createRenderer(options: RendererOptions) {
   }
 
   function setupRenderEffect(instance: ComponentInstance, container) {
-    const { proxy } = instance;
+    effect(() => {
+      if (!instance.isMounted) {
+        const { proxy } = instance;
 
-    if (!instance.render) return;
-    const subTree = instance.render.call(proxy);
+        if (!instance.render) return;
+        const subTree = (instance.subTree = instance.render.call(proxy));
 
-    // vnode -> patch
-    // vnode -> element -> mountElement
-    patch(subTree, container, instance);
+        // vnode -> patch
+        patch(null, subTree, container, instance);
 
-    // After element mounted
-    instance.vnode.el = subTree.el;
+        // After element mounted
+        instance.vnode.el = subTree.el;
+
+        instance.isMounted = true;
+      } else {
+        const { proxy, subTree: prevSubTree } = instance;
+
+        if (!instance.render) return;
+        const subTree = (instance.subTree = instance.render.call(proxy));
+
+        patch(prevSubTree, subTree, container, instance);
+        instance.vnode.el = subTree.el;
+      }
+    });
   }
 
   function mountChildren(
@@ -138,9 +174,9 @@ export function createRenderer(options: RendererOptions) {
   ) {
     children.forEach((child) => {
       if (typeof child === 'string') {
-        patch(createTextVNode(child), container, parentInstance);
+        patch(null, createTextVNode(child), container, parentInstance);
       } else {
-        patch(child, container, parentInstance);
+        patch(null, child, container, parentInstance);
       }
     });
   }
