@@ -9,6 +9,8 @@ export interface RendererOptions {
   createElement: (type: string) => any;
   patchProps: (el: HTMLElement, key: string, prevVal: any, nextVal: any) => void;
   insert: (el: HTMLElement, container: HTMLElement) => void;
+  remove: (el: HTMLElement | Text) => void;
+  setElementText: (el: HTMLElement, text: string) => void;
 }
 
 export function createRenderer(options: RendererOptions) {
@@ -16,6 +18,8 @@ export function createRenderer(options: RendererOptions) {
     createElement: hostCreateElement,
     patchProps: hostPatchProps,
     insert: hostInsert,
+    remove: hostRemove,
+    setElementText: hostSetElementText,
   } = options;
 
   function render(vnode: VNode, container: HTMLElement) {
@@ -78,19 +82,62 @@ export function createRenderer(options: RendererOptions) {
     if (!prevNode) {
       mountElement(currNode, container, parentInstance);
     } else {
-      patchElement(prevNode, currNode, container);
+      patchElement(prevNode, currNode, container, parentInstance);
     }
   }
 
-  function patchElement(prevNode: VNode, currNode: VNode, container: HTMLElement) {
+  function patchElement(
+    prevNode: VNode,
+    currNode: VNode,
+    container: HTMLElement,
+    parentInstance: ComponentInstance | null = null
+  ) {
     // TODO: patch props
     const oldProps = prevNode.props || EMPTY_OBJ;
     const newProps = currNode.props || EMPTY_OBJ;
 
-    const el = (currNode.el = prevNode.el);
+    const el = (currNode.el = prevNode.el) as HTMLElement;
 
-    patchProps(el as HTMLElement, oldProps, newProps);
+    patchChildren(prevNode, currNode, el, parentInstance);
+    patchProps(el, oldProps, newProps);
     // TODO: patch children
+  }
+
+  function patchChildren(
+    prevNode: VNode,
+    currNode: VNode,
+    container: HTMLElement,
+    parentInstance: ComponentInstance | null
+  ) {
+    const { shapeFlag, children } = currNode;
+    const { shapeFlag: prevShapeFlag, children: prevChildren } = prevNode;
+
+    if (shapeFlag & ShapeFlag.TEXT_CHILDREN) {
+      // Array -> Text
+      if (prevShapeFlag & ShapeFlag.ARRAY_CHILDREN) {
+        // Remove children
+        unmountChildren(prevNode.children);
+      }
+      // Update text content
+      if (prevChildren !== children) {
+        hostSetElementText(container, children as string);
+      }
+    } else {
+      if (prevShapeFlag & ShapeFlag.TEXT_CHILDREN) {
+        hostSetElementText(container, '');
+        mountChildren(children as VNode[], container, parentInstance);
+      }
+    }
+  }
+
+  function unmountChildren(children: VNode[] | string | undefined) {
+    if (!Array.isArray(children)) return;
+
+    children.forEach((child, i) => {
+      // Remove
+      const el = child.el;
+      if (el) hostRemove(el);
+    });
   }
 
   function patchProps(el: HTMLElement, oldProps, newProps) {
