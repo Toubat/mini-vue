@@ -5,6 +5,7 @@ export const Fragment = Symbol('Fragment');
 export const Text = Symbol('Text');
 
 export interface VNode {
+  key: any;
   type: Component | string | typeof Fragment | typeof Text;
   props: any;
   children?: VNode[] | string;
@@ -18,6 +19,7 @@ export function createVNode(
   children?: VNode[] | string
 ): VNode {
   const vnode: VNode = {
+    key: (props && props.key) || null,
     type,
     props,
     children,
