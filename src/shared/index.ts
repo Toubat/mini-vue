@@ -37,3 +37,34 @@ export const isSameVNodeType = (node1: VNode, node2: VNode) => {
     node1.type === node2.type && node1.key !== null && node2.key != null && node1.key === node2.key
   );
 };
+
+/**
+ * Given a list of number, get the list of indices representing LIS
+ * @param nums list of number
+ */
+export const getSequenceIndices = (nums: number[]): number[] => {
+  let idx = 0;
+  const indices: number[] = [];
+  const LIS = new Array(nums.length).fill(1); // length of LIS ending with element i
+  const prev = new Array(nums.length).fill(-1); // index of the previous number in LIS ending with element i
+
+  for (let i = 1; i < nums.length; i++) {
+    for (let j = 0; j < i; j++) {
+      if (nums[j] < nums[i] && LIS[i] < LIS[j] + 1) {
+        LIS[i] = LIS[j] + 1;
+        prev[i] = j;
+      }
+    }
+    if (LIS[idx] < LIS[i]) {
+      idx = i;
+    }
+  }
+
+  while (idx !== -1) {
+    indices.push(idx);
+    idx = prev[idx];
+  }
+
+  indices.reverse();
+  return indices;
+};

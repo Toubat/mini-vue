@@ -1,5 +1,5 @@
 import { effect } from '../reactivity/effect';
-import { EMPTY_OBJ, isSameVNodeType } from '../shared';
+import { EMPTY_OBJ, getSequenceIndices, isSameVNodeType } from '../shared';
 import { ShapeFlag } from '../shared/shapeFlags';
 import { createComponentInstance, setupComponent, Component, ComponentInstance } from './component';
 import { createAppAPI } from './createApp';
@@ -65,7 +65,7 @@ export function createRenderer(options: RendererOptions) {
   ) {
     const { children } = currNode;
 
-    mountChildren(children as VNode[], container, parentInstance, anchor);
+    mountChildren(children as VNode[], container, parentInstance, null);
   }
 
   function processText(prevNode: VNode | null, currNode: VNode, container: HTMLElement) {
@@ -130,7 +130,7 @@ export function createRenderer(options: RendererOptions) {
     } else {
       if (prevShapeFlag & ShapeFlag.TEXT_CHILDREN) {
         hostSetElementText(container, '');
-        mountChildren(children as VNode[], container, parentInstance, anchor);
+        mountChildren(children as VNode[], container, parentInstance, null);
       } else {
         // Array -> Array
         patchKeyedChildren(
@@ -229,10 +229,13 @@ export function createRenderer(options: RendererOptions) {
     } else {
       let s1 = i;
       let s2 = i;
+      let patched = 0;
+      let moved = false;
+      let maxNewIndexSoFar = 0;
 
       const toBePatched = currEnd - s2 + 1;
-      let patched = 0;
       const keyToNewIndexMap = new Map();
+      const newIndexToOldIndexMap = new Array(toBePatched).fill(-1);
 
       // Create key to new index mapping
       for (let i = s2; i <= currEnd; i++) {
@@ -240,8 +243,8 @@ export function createRenderer(options: RendererOptions) {
         if (key != null) keyToNewIndexMap.set(key, i);
       }
 
-      // Iterate over old children to find their new index,
-      // if new index not found, node should be deleted
+      // Iterate over old children to find their new index based on key,
+      // if new index not found, node should be removed
       // otherwise, recursively patch node
       for (let i = s1; i <= prevEnd; i++) {
         const prevNode = prevChildren[i];
@@ -268,8 +271,41 @@ export function createRenderer(options: RendererOptions) {
         if (newIndex === undefined) {
           hostRemove(prevNode.el as any);
         } else {
+          // Optimization: check if new indices is a strictly incrementing sequence
+          // If so, no need to run longest increasing subsequence algorithm
+          if (newIndex > maxNewIndexSoFar) {
+            maxNewIndexSoFar = newIndex;
+          } else {
+            moved = true;
+          }
+          // A  B  (C  D  E)  F
+          // A  B  (E  C  D)  F
+          // Want: [4, 2, 3]
+          newIndexToOldIndexMap[newIndex - s2] = i;
           patch(prevNode, currChildren[newIndex], container, parentInstance, null);
           patched++;
+        }
+      }
+
+      // Reorder existing nodes to new indices
+      const increasingNewIdxSequence = moved ? getSequenceIndices(newIndexToOldIndexMap) : [];
+      let j = increasingNewIdxSequence.length - 1;
+
+      debugger;
+      for (let i = toBePatched - 1; i >= 0; i--) {
+        const currIndex = i + s2;
+        const currChild = currChildren[currIndex];
+        const anchor: any = currIndex + 1 < currLength ? currChildren[currIndex + 1].el : null;
+
+        // Create new nodes
+        if (newIndexToOldIndexMap[i] === -1) {
+          patch(null, currChild, container, parentInstance, anchor);
+        } else if (moved) {
+          if (j < 0 || i !== increasingNewIdxSequence[j]) {
+            hostInsert(currChild.el as any, container, anchor);
+          } else {
+            j--;
+          }
         }
       }
     }
@@ -325,7 +361,7 @@ export function createRenderer(options: RendererOptions) {
     if (shapeFlag & ShapeFlag.TEXT_CHILDREN) {
       el.textContent = children as string;
     } else if (shapeFlag & ShapeFlag.ARRAY_CHILDREN) {
-      mountChildren(children as VNode[], el, parentInstance, anchor);
+      mountChildren(children as VNode[], el, parentInstance, null);
     }
 
     for (const key in props) {
