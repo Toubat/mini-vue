@@ -291,7 +291,6 @@ export function createRenderer(options: RendererOptions) {
       const increasingNewIdxSequence = moved ? getSequenceIndices(newIndexToOldIndexMap) : [];
       let j = increasingNewIdxSequence.length - 1;
 
-      debugger;
       for (let i = toBePatched - 1; i >= 0; i--) {
         const currIndex = i + s2;
         const currChild = currChildren[currIndex];
