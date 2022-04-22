@@ -1,5 +1,5 @@
 import { ShapeFlag } from '../shared/shapeFlags';
-import { Component } from './component';
+import { Component, ComponentInstance } from './component';
 
 export const Fragment = Symbol('Fragment');
 export const Text = Symbol('Text');
@@ -11,6 +11,7 @@ export interface VNode {
   children?: VNode[] | string;
   shapeFlag: ShapeFlag;
   el: HTMLElement | Text | null;
+  instance: ComponentInstance | null;
 }
 
 export function createVNode(
@@ -25,6 +26,7 @@ export function createVNode(
     children,
     shapeFlag: getShapeFlag(type),
     el: null,
+    instance: null,
   };
 
   if (typeof children === 'string') {

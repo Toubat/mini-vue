@@ -94,7 +94,9 @@ export function trigger(target, key) {
   const depsMap = targetMap.get(target);
   const dep = depsMap.get(key);
 
-  triggerEffects(dep);
+  if (dep !== undefined) {
+    triggerEffects(dep);
+  }
 }
 
 export function triggerEffects(dep) {

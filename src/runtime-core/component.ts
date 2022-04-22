@@ -16,6 +16,7 @@ export interface Component {
 export interface ComponentInstance {
   type: any;
   vnode: VNode;
+  next: VNode | null;
   setupState: any;
   props: any;
   slots: any;
@@ -25,6 +26,7 @@ export interface ComponentInstance {
   parent: ComponentInstance | null;
   isMounted: boolean;
   subTree: VNode | null;
+  update: () => void;
   emit: Emit;
   render?: () => VNode;
 }
@@ -39,6 +41,7 @@ export function createComponentInstance(
   const instance: ComponentInstance = {
     type: vnode.type,
     vnode,
+    next: null,
     setupState: {},
     props: {},
     slots: {},
@@ -48,6 +51,7 @@ export function createComponentInstance(
     parent: parent,
     isMounted: false,
     subTree: null,
+    update: () => null,
     emit: () => {},
   };
 

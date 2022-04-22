@@ -33,9 +33,7 @@ export const camelize = (str: string): string => {
 };
 
 export const isSameVNodeType = (node1: VNode, node2: VNode) => {
-  return (
-    node1.type === node2.type && node1.key !== null && node2.key != null && node1.key === node2.key
-  );
+  return node1.type === node2.type && node1.key === node2.key;
 };
 
 /**

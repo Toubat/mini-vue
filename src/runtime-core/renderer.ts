@@ -2,6 +2,7 @@ import { effect } from '../reactivity/effect';
 import { EMPTY_OBJ, getSequenceIndices, isSameVNodeType } from '../shared';
 import { ShapeFlag } from '../shared/shapeFlags';
 import { createComponentInstance, setupComponent, Component, ComponentInstance } from './component';
+import { shouldUpdateComponent } from './componentUpdateUtils';
 import { createAppAPI } from './createApp';
 import { createTextVNode, Fragment, Text, VNode } from './vnode';
 
@@ -256,7 +257,7 @@ export function createRenderer(options: RendererOptions) {
           continue;
         }
 
-        let newIndex;
+        let newIndex; // index of prevNode in newChildren array
         if (prevNode.key !== null) {
           newIndex = keyToNewIndexMap.get(prevNode.key);
         } else {
@@ -298,6 +299,7 @@ export function createRenderer(options: RendererOptions) {
 
         // Create new nodes
         if (newIndexToOldIndexMap[i] === -1) {
+          // -1 means new node, so we create a new one
           patch(null, currChild, container, parentInstance, anchor);
         } else if (moved) {
           if (j < 0 || i !== increasingNewIdxSequence[j]) {
@@ -341,7 +343,23 @@ export function createRenderer(options: RendererOptions) {
     parentInstance: ComponentInstance | null,
     anchor: HTMLElement | null
   ) {
-    mountComponent(currNode, container, parentInstance, anchor);
+    if (!prevNode) {
+      mountComponent(currNode, container, parentInstance, anchor);
+    } else {
+      updateComponent(prevNode, currNode);
+    }
+  }
+
+  function updateComponent(prevNode: VNode, currNode: VNode) {
+    const instance = (currNode.instance = prevNode.instance as ComponentInstance);
+    if (shouldUpdateComponent(prevNode, currNode)) {
+      instance.next = currNode;
+
+      instance.update();
+    } else {
+      currNode.el = prevNode.el;
+      instance.vnode = currNode;
+    }
   }
 
   function mountElement(
@@ -379,14 +397,17 @@ export function createRenderer(options: RendererOptions) {
     anchor: HTMLElement | null
   ) {
     // Create component instance
-    const instance = createComponentInstance(initialVNode, parentInstance);
+    const instance = (initialVNode.instance = createComponentInstance(
+      initialVNode,
+      parentInstance
+    ));
 
     setupComponent(instance);
     setupRenderEffect(instance, container, anchor);
   }
 
   function setupRenderEffect(instance: ComponentInstance, container, anchor: HTMLElement | null) {
-    effect(() => {
+    instance.update = effect(() => {
       if (!instance.isMounted) {
         const { proxy } = instance;
 
@@ -401,7 +422,13 @@ export function createRenderer(options: RendererOptions) {
 
         instance.isMounted = true;
       } else {
-        const { proxy, subTree: prevSubTree } = instance;
+        // Update: el, props, subTree, vnode
+        const { proxy, subTree: prevSubTree, next, vnode } = instance;
+
+        if (next) {
+          next.el = vnode.el;
+          updateComponentPreRender(instance, next);
+        }
 
         if (!instance.render) return;
         const subTree = (instance.subTree = instance.render.call(proxy));
@@ -410,6 +437,13 @@ export function createRenderer(options: RendererOptions) {
         // instance.vnode.el = subTree.el;
       }
     });
+  }
+
+  function updateComponentPreRender(instance: ComponentInstance, nextVNode: VNode) {
+    instance.vnode = nextVNode;
+    instance.next = null;
+    // Update props
+    instance.props = nextVNode.props;
   }
 
   function mountChildren(
