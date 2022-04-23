@@ -27,8 +27,10 @@
     1. props is modified, added
     2. props is deleted
     3. props is set to undefined or null
-  - [ ] handle children update
-  - [ ] next tick 
+  - [x] handle children update
+  - [x] handle component update
+    - [x] optimize component update using microtasks  
+  - [x] next tick 
 
 ## Compiler Module
 - [ ] Todo
