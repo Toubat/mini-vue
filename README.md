@@ -28,6 +28,13 @@
     2. props is deleted
     3. props is set to undefined or null
   - [x] handle children update
+    - Diff:
+      - [x] new elements appended to the end
+      - [x] new elements appended to the start
+      - [x] compare middle portion:
+        1. add new elements
+        2. remove old elements
+        3. patch existing elements  
   - [x] handle component update
     - [x] optimize component update using microtasks  
   - [x] next tick 
