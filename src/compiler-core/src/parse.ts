@@ -11,24 +11,47 @@ const enum TagType {
 export function baseParse(content: string) {
   const context = createParserContext(content);
 
-  return createRoot(parseChildren(context));
+  return createRoot(parseChildren(context, []));
 }
 
-function parseChildren(context) {
+function parseChildren(context, ancestors) {
   const nodes: any[] = [];
 
-  let node;
-  const source = context.source;
-  if (source.startsWith(openDelimiter)) {
-    node = parseInterpolation(context);
-  } else if (source[0] === '<') {
-    if (/[a-z]/i.test(source[1])) {
-      node = parseElement(context);
+  while (!isEnd(context, ancestors)) {
+    let node;
+    const source = context.source;
+    if (source.startsWith(openDelimiter)) {
+      node = parseInterpolation(context);
+    } else if (source[0] === '<') {
+      if (/[a-z]/i.test(source[1])) {
+        node = parseElement(context, ancestors);
+      }
     }
+
+    if (!node) {
+      node = parseText(context);
+    }
+    nodes.push(node);
   }
-  nodes.push(node);
 
   return nodes;
+}
+
+function isEnd(context, ancestors) {
+  const s = context.source;
+
+  // 1. encounter end tag
+  if (s.startsWith('</')) {
+    for (let i = ancestors.length - 1; i >= 0; i--) {
+      const tag = ancestors[i].tag;
+      if (startsWithEndTagOpen(s, tag)) {
+        return true;
+      }
+    }
+  }
+
+  // 2. source has value
+  return !s;
 }
 
 function parseInterpolation(context) {
@@ -36,10 +59,10 @@ function parseInterpolation(context) {
   advanceBy(context, openDelimiter.length);
 
   const rawContentLength = closeIndex - openDelimiter.length;
-  const rawContent = context.source.slice(0, rawContentLength);
+  const rawContent = parseTextData(context, rawContentLength);
   const content = rawContent.trim();
 
-  advanceBy(context, rawContentLength + closeDelimiter.length);
+  advanceBy(context, closeDelimiter.length);
 
   return {
     type: NodeType.INTERPOLATION,
@@ -50,12 +73,45 @@ function parseInterpolation(context) {
   };
 }
 
-function parseElement(context: any) {
-  const element = parseTag(context, TagType.START);
+function parseElement(context: any, ancestors) {
+  const element: any = parseTag(context, TagType.START);
+  ancestors.push(element);
+  element.children = parseChildren(context, ancestors);
+  ancestors.pop();
 
-  parseTag(context, TagType.END);
+  if (startsWithEndTagOpen(context.source, element.tag)) {
+    parseTag(context, TagType.END);
+  } else {
+    throw new Error(`Missing close tag: ${element.tag}`);
+  }
 
   return element;
+}
+
+function parseText(context: any): any {
+  let endIndex = context.source.length;
+  // 1. Get content
+  const endTokens = ['</', '{{'];
+
+  for (let i = 0; i < endTokens.length; i++) {
+    const index = context.source.indexOf(endTokens[i]);
+    if (index !== -1 && index < endIndex) {
+      endIndex = index;
+    }
+  }
+
+  const content = parseTextData(context, endIndex);
+
+  return {
+    type: NodeType.TEXT,
+    content: content,
+  };
+}
+
+function startsWithEndTagOpen(source: string, tag: string) {
+  return (
+    source.startsWith('</') && source.slice(2, tag.length + 2).toLowerCase() === tag.toLowerCase()
+  );
 }
 
 function parseTag(context: any, type: TagType) {
@@ -72,6 +128,19 @@ function parseTag(context: any, type: TagType) {
     type: NodeType.ELEMENT,
     tag,
   };
+}
+
+/**
+ * Parse text data and advance by text length
+ * @param context
+ * @param length
+ * @returns text content
+ */
+function parseTextData(context: any, length: number) {
+  const content = context.source.slice(0, length);
+  advanceBy(context, length);
+
+  return content;
 }
 
 function createRoot(children) {
