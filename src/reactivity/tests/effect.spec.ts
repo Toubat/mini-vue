@@ -174,4 +174,28 @@ describe('stop', () => {
     obj.foo = 2;
     expect(inner).toBe(2);
   });
+
+  it('no stack overflow', () => {
+    const values = reactive([1, 2, 3]);
+    effect(() => {
+      values.push(4);
+    });
+
+    expect(values).toEqual([1, 2, 3, 4]);
+
+    values.push(5);
+    expect(values).toEqual([1, 2, 3, 4, 5, 4]);
+  });
+
+  it('should update array', () => {
+    const values = reactive({ foo: [1, 2, 3] });
+    effect(() => {
+      values.foo.push(4);
+    });
+
+    expect(values.foo).toEqual([1, 2, 3, 4]);
+
+    values.foo[0] = 2;
+    expect(values).toEqual({ foo: [2, 2, 3, 4] });
+  });
 });

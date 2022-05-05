@@ -77,6 +77,12 @@ export function track(target, key) {
   trackEffects(dep);
 }
 
+// function trackArray(target: any[]) {
+//   target.forEach((val, i) => {
+//     track(target, String(i));
+//   });
+// }
+
 export function trackEffects(dep) {
   if (activeEffects) {
     activeEffects.forEach((activeEffect) => {
@@ -109,10 +115,12 @@ export function trigger(target, key) {
 
 export function triggerEffects(dep) {
   dep.forEach((effect) => {
-    if (effect.scheduler) {
-      effect.scheduler();
-    } else {
-      effect.run();
+    if (!activeEffects.includes(effect)) {
+      if (effect.scheduler) {
+        effect.scheduler();
+      } else {
+        effect.run();
+      }
     }
   });
 }

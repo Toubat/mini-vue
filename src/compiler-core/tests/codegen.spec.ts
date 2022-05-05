@@ -32,7 +32,7 @@ describe('codegen', () => {
     transform(ast, {
       nodeTransforms: [transformElement],
     });
-    console.log(ast);
+
     const { code } = generate(ast);
 
     expect(code).toMatchSnapshot();
