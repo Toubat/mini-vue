@@ -1,6 +1,7 @@
 import { getCombinedNodeFlags } from 'typescript';
+import { isString } from '../../shared';
 import { NodeType } from './ast';
-import { helperMapName, TO_DISPLAY_STRING } from './runtime-helpers';
+import { CREATE_ELEMENT_VNODE, helperMapName, TO_DISPLAY_STRING } from './runtime-helpers';
 
 export function generate(ast) {
   const context = createCodegenContext();
@@ -63,9 +64,56 @@ function genNode(node, context) {
     case NodeType.SIMPLE_EXPRESSION:
       genExpression(node, context);
       break;
+    case NodeType.ELEMENT:
+      genElement(node, context);
+      break;
+    case NodeType.COMPOUND_EXPRESSION:
+      genCompoundExpression(node, context);
+      break;
     default:
       break;
   }
+}
+
+function genCompoundExpression(node: any, context: any) {
+  const { push } = context;
+
+  node.children.forEach((child) => {
+    if (isString(child)) {
+      push(child);
+    } else {
+      genNode(child, context);
+    }
+  });
+}
+
+function genElement(node: any, context: any) {
+  const { push, _ } = context;
+  const { tag, children, props } = node;
+
+  push(`${_(CREATE_ELEMENT_VNODE)}(`);
+  genArgList(genNullable([tag, props, children]), context);
+
+  push(')');
+}
+
+function genArgList(args, context) {
+  const { push } = context;
+  args.forEach((arg, i) => {
+    if (isString(arg)) {
+      push(arg);
+    } else {
+      genNode(arg, context);
+    }
+
+    if (i < args.length - 1) {
+      push(', ');
+    }
+  });
+}
+
+function genNullable(args) {
+  return args.map((arg) => arg || 'null');
 }
 
 function genExpression(node: any, context: any) {

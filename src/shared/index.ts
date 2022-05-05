@@ -36,6 +36,10 @@ export const isSameVNodeType = (node1: VNode, node2: VNode) => {
   return node1.type === node2.type && node1.key === node2.key;
 };
 
+export const isString = (value) => {
+  return typeof value === 'string';
+};
+
 /**
  * Given a list of number, get the list of indices representing LIS
  * @param nums list of number

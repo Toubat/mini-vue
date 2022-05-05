@@ -4,4 +4,5 @@ export const enum NodeType {
   ELEMENT = 'element',
   TEXT = 'text',
   ROOT = 'root',
+  COMPOUND_EXPRESSION = 'compound_expression',
 }
