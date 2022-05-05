@@ -14,6 +14,8 @@ export interface VNode {
   instance: ComponentInstance | null;
 }
 
+export { createVNode as createElementVNode };
+
 export function createVNode(
   type: Component | string | typeof Fragment | typeof Text,
   props: any = {},

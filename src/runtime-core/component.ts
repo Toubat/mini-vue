@@ -11,6 +11,7 @@ export type Emit = (event: string, ...args: any[]) => void;
 export interface Component {
   setup?: (props: any, { emit }: { emit: Emit }) => any;
   render?: () => VNode;
+  template?: string;
 }
 
 export interface ComponentInstance {
@@ -28,7 +29,7 @@ export interface ComponentInstance {
   subTree: VNode | null;
   update: () => void;
   emit: Emit;
-  render?: () => VNode;
+  render?: (ctx) => VNode;
 }
 
 let currentInstance: ComponentInstance | null = null;
@@ -99,7 +100,11 @@ function handleSetupResult(instance: ComponentInstance, setupResult: any) {
 function finishComponentSetup(instance: ComponentInstance) {
   const Component: Component = instance.type;
 
-  if (!instance.render) {
+  if (compiler && !Component.render) {
+    if (Component.template) {
+      instance.render = compiler(Component.template);
+    }
+  } else {
     instance.render = Component.render;
   }
 }
@@ -110,4 +115,10 @@ export function getCurrentInstance() {
 
 export function setCurrentInstance(instance: ComponentInstance | null) {
   currentInstance = instance;
+}
+
+let compiler;
+
+export function registerRuntimeCompiler(_compiler) {
+  compiler = _compiler;
 }
