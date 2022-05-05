@@ -1,7 +1,7 @@
 import { extend } from '../shared';
 
 // Global variables
-let activeEffect: ReactiveEffect | undefined;
+let activeEffects: ReactiveEffect[] = [];
 let targetMap = new WeakMap();
 let shouldTrack;
 
@@ -23,12 +23,12 @@ export class ReactiveEffect {
     }
 
     shouldTrack = true;
-    activeEffect = this;
+    activeEffects.push(this);
 
     const res = this._fn();
 
     shouldTrack = false;
-    activeEffect = undefined;
+    activeEffects.pop();
 
     return res;
   }
@@ -78,15 +78,23 @@ export function track(target, key) {
 }
 
 export function trackEffects(dep) {
+  if (activeEffects) {
+    activeEffects.forEach((activeEffect) => {
+      trackEffect(activeEffect, dep);
+    });
+  }
+}
+
+export function trackEffect(effect, dep) {
   // No need to add existing dependency
-  if (dep.has(activeEffect)) return;
+  if (dep.has(effect)) return;
 
   // Add effect to the dependency map
-  dep.add(activeEffect);
+  dep.add(effect);
 
   // Effect reverse mapping
-  if (activeEffect) {
-    activeEffect.deps.push(dep);
+  if (effect) {
+    effect.deps.push(dep);
   }
 }
 
@@ -114,6 +122,7 @@ export function stop(runner) {
 }
 
 export function isTracking() {
+  const activeEffect = getActiveEffect();
   return shouldTrack && activeEffect !== undefined;
 }
 
@@ -123,4 +132,11 @@ function cleanupEffect(effect) {
   });
   // Reset deps
   effect.deps.length = 0;
+}
+
+function getActiveEffect(): ReactiveEffect | undefined {
+  if (activeEffects) {
+    return activeEffects[activeEffects.length - 1];
+  }
+  return undefined;
 }

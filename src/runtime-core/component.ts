@@ -37,7 +37,6 @@ export function createComponentInstance(
   vnode: VNode,
   parent: ComponentInstance | null
 ): ComponentInstance {
-  console.log('parent: ', parent);
   const instance: ComponentInstance = {
     type: vnode.type,
     vnode,

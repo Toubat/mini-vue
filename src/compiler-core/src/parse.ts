@@ -44,7 +44,7 @@ function isEnd(context, ancestors) {
   if (s.startsWith('</')) {
     for (let i = ancestors.length - 1; i >= 0; i--) {
       const tag = ancestors[i].tag;
-      if (startsWithEndTagOpen(s, tag)) {
+      if (startsWithEndTag(s, tag)) {
         return true;
       }
     }
@@ -79,7 +79,7 @@ function parseElement(context: any, ancestors) {
   element.children = parseChildren(context, ancestors);
   ancestors.pop();
 
-  if (startsWithEndTagOpen(context.source, element.tag)) {
+  if (startsWithEndTag(context.source, element.tag)) {
     parseTag(context, TagType.END);
   } else {
     throw new Error(`Missing close tag: ${element.tag}`);
@@ -108,7 +108,7 @@ function parseText(context: any): any {
   };
 }
 
-function startsWithEndTagOpen(source: string, tag: string) {
+function startsWithEndTag(source: string, tag: string) {
   return (
     source.startsWith('</') && source.slice(2, tag.length + 2).toLowerCase() === tag.toLowerCase()
   );
@@ -145,6 +145,7 @@ function parseTextData(context: any, length: number) {
 
 function createRoot(children) {
   return {
+    type: NodeType.ROOT,
     children,
   };
 }

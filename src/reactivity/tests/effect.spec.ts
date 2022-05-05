@@ -1,5 +1,6 @@
 import { reactive } from '../reactive';
 import { effect, stop } from '../effect';
+import { computed } from '../computed';
 
 describe('effect', () => {
   it('happy path', () => {
@@ -131,5 +132,46 @@ describe('stop', () => {
 
     stop(runner);
     expect(onStop).toBeCalledTimes(1);
+  });
+
+  it('nested effect', () => {
+    const obj = reactive({ foo: 1 });
+    let inner;
+    let outer;
+
+    const runner = effect(() => {
+      effect(() => {
+        inner = obj.foo;
+      });
+      outer = obj.foo;
+    });
+
+    expect(inner).toBe(1);
+    expect(outer).toBe(1);
+
+    obj.foo = 2;
+    expect(inner).toBe(2);
+    expect(outer).toBe(2);
+  });
+
+  it.skip('nested effect runner', () => {
+    const obj = reactive({ foo: 1 });
+    let inner = 0;
+
+    const runner = effect(() => {
+      const runner = effect(() => {
+        inner += 1;
+        console.log('inner', inner);
+        return obj.foo;
+      });
+
+      return runner;
+    });
+
+    expect(obj.foo).toBe(1);
+    expect(inner).toBe(1);
+
+    obj.foo = 2;
+    expect(inner).toBe(2);
   });
 });
